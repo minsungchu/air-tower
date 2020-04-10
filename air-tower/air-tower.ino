@@ -1,9 +1,22 @@
 #include <DHT.h>
-#include <DHT_U.h>
+#include "U8glib.h"
 
-#define DHTPIN 8     // Digital pin connected to the DHT sensor
+// DHT11
+#define DHTPIN D4     // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT11   // DHT 11
 DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor.
+
+// OLED SSD1306 0.96inch
+U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NONE);
+
+// GP2Y1014AU0F
+// Analog Pin A0
+// Digital Pin D3
+
+void draw(){
+  u8g.setFont(u8g_font_unifont);
+  u8g.drawStr(0,20,"Hello World!");
+}
 
 void setup() {
   Serial.begin(9600);
@@ -13,6 +26,7 @@ void setup() {
 }
 
 void loop() {
+  // Wait a few seconds between measurements.
   delay(2000);
 
   // Reading temperature or humidity takes about 250 milliseconds!
@@ -22,7 +36,7 @@ void loop() {
   float t = dht.readTemperature();
   // Read temperature as Fahrenheit (isFahrenheit = true)
   float f = dht.readTemperature(true);
-
+  
   // Check if any reads failed and exit early (to try again).
   if (isnan(h) || isnan(t) || isnan(f)) {
     Serial.println(F("Failed to read from DHT sensor!"));
@@ -45,5 +59,10 @@ void loop() {
   Serial.print(F("°C "));
   Serial.print(hif);
   Serial.println(F("°F"));
+
+  u8g.firstPage();
+  do{
+    draw();
+  }while(u8g.nextPage());
 
 }
