@@ -1,4 +1,3 @@
-#include <DHT.h>
 // Arduino Pinmap
 // D0 - GPIO 16       
 // D1 - GPIO 5 / SCL  - OLED SCL
@@ -12,8 +11,13 @@
 // TX
 // RX
 
+// Blynk Port
+// Temperature : V0
+// Humidity : V1
+// PM : V2
+
+#include <DHT.h>
 #include <PMsensor.h>
-#include "U8glib.h"
 #include <Adafruit_NeoPixel.h>
 
 #include <ESP8266WiFi.h>
@@ -25,6 +29,8 @@
 #define OLED_RESET 0
 Adafruit_SSD1306 display(OLED_RESET);
 
+#include <BlynkSimpleEsp8266.h>
+
 // DHT11
 #define DHTPIN D4         // DHT Digital Pin
 #define DHTTYPE DHT11     // DHT Model - DHT11
@@ -32,8 +38,6 @@ DHT dht(DHTPIN, DHTTYPE); // Initialize DHT sensor.
 
 // PM sensor(GP2Y1014AU0F)
 PMsensor PM;
-
-int delayCnt = 0;
 
 // Touch SW
 #define SW D6
@@ -50,46 +54,65 @@ Adafruit_NeoPixel pixels(NUMPIXELS, LEDPIN, NEO_GRB + NEO_KHZ800);
 const char* ssid = "KT_WLAN_4C5F";
 const char* password = "ajaj2015";
 
+// You should get Auth Token in the Blynk App.
+// Go to the Project Settings (nut icon).
+char auth[] = "vvtvziNZKUWGT6e77KIhBf-zXICGuLRJ";
+BlynkTimer timer;
+
+int delayCnt = 0;
+
 void setup() {
+  // init Serial Communication
   Serial.begin(9600);
   Serial.println("Air Tower ver1.0, April 2020");
 
-  dht.begin();
-  
-  PM.init(D3, 0);  // Digital Pin(infrared LED pin, D3(=GPIO 0))
-                    // Analog Pin(sensor pin, A0)
-                    
-  pinMode(SW, INPUT); // Setting pinmode of Touch SW
-  //attachInterrupt(digitalPinToInterrupt(SW), swISR, CHANGE);
+  // init DHT11 sensor
+  dht.begin();  
 
-  pinMode(FAN, OUTPUT);
-  
+  // init PM sensor
+  // Digital Pin(infrared LED pin, D3(=GPIO 0))
+  // Analog Pin(sensor pin, A0)
+  PM.init(D3, 0);  
+
+  // init Neopixel LED
   pixels.begin();
-
-
+  
+  // init OLED Display
   display.begin();
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
   display.println("Air Tower V1.0");
-  display.display(); 
+  display.display();
+
+  // Setting pinmode of Touch SW
+  pinMode(SW, INPUT); 
+
+  // Setting pinmode of FAN
+  pinMode(FAN, OUTPUT);
+
+  // init Blynk app
+  Blynk.begin(auth, ssid, password);
 }
 
 void loop() {
 
-  // ****************************
-  // [START] DHT11 Sensor
-  // ****************************
   // Wait a few seconds between measurements.
   delay(100);
 
+  Blynk.run();
+  
   delayCnt++;
   float dhtHumid = 0;
   float dhtTemp = 0;
   float dhtTempF = 0;
   float PM2p5 = 0;
   if(delayCnt > 30){
+      // ****************************
+      // [START] DHT11 Sensor
+      // ****************************
+      
       // Reading temperature or humidity takes about 250 milliseconds!
       // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
       dhtHumid = dht.readHumidity();
@@ -106,6 +129,7 @@ void loop() {
       // ****************************
       // [END] DHT11 Sensor
       // ****************************
+
     
       // ****************************
       // [START] PM Sensor(GP2Y1014AU0F)
@@ -122,6 +146,7 @@ void loop() {
       // [END] PM Sensor (GP2Y1014AU0F)
       // ****************************
 
+
       // ****************************
       // [START] Serial Print
       // ****************************
@@ -131,20 +156,17 @@ void loop() {
       Serial.print("% ");
       Serial.print(PM2p5);
       Serial.print("ug/m3 ");
-      //Serial.print("SW : ");
-      //Serial.print(statSW);
       Serial.println("");
       // ****************************
       // [END] Serial Print
       // ****************************
 
-      delayCnt = 0;
 
       // ****************************
       // [START] Display
       // ****************************
       
-        // Clear the buffer.
+      // Clear the buffer.
       display.clearDisplay();
       display.setTextSize(1);
       display.setTextColor(WHITE);
@@ -154,7 +176,7 @@ void loop() {
       
       display.print("Temp = ");
       display.print(dhtTemp);
-      display.println("C");
+      display.println("°C");
     
       display.print("Humidity = ");
       display.print(dhtHumid);
@@ -165,10 +187,18 @@ void loop() {
       display.println("ug/m3");
     
       display.display();
+      
       // ****************************
       // [END] Display
       // ****************************
+
+      Blynk.virtualWrite(V0, dhtTemp);
+      Blynk.virtualWrite(V1, dhtHumid);
+      Blynk.virtualWrite(V2, PM2p5);
+  
+      delayCnt = 0;
   }
+
   
   // ****************************
   // [START] Touch SW
@@ -177,6 +207,7 @@ void loop() {
   // ****************************
   // [END] Touch SW
   // ****************************
+
 
   // ****************************
   // [START] NeoPixel
@@ -199,8 +230,5 @@ void loop() {
   // [END] NeoPixel
   // ****************************
 
-
-
   
-
 }
