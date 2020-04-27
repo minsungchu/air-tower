@@ -22,5 +22,8 @@
    2. https://examples.blynk.cc/?board=ESP8266&shield=ESP8266%20WiFi&example=More%2FDHT11
 
 2. OLED & 와이파이 연동
+
    1. http://blog.daum.net/rockjjy99/2615 : 빌트인포트를 4에서 0으로 수정하고, begin함수의 인자값 삭제해야 함.
    2. https://automatedhome.party/2017/04/17/connect-an-inexpensive-oled-display-to-a-esp8266wemos-d1-mini/ : 그대로 실행 가능
+
+3. ...
